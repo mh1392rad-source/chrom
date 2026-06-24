@@ -1,395 +1,280 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بازی پرش از موانع</title>
+    <title>بازی پرش (نسخه اتمی)</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            background: linear-gradient(145deg, #1e293b, #0f172a);
+            background: #0f172a;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            font-family: Tahoma, 'Segoe UI', sans-serif;
-            padding: 15px;
+            height: 100vh;
+            margin: 0;
+            font-family: Tahoma, sans-serif;
         }
-
-        .game-wrapper {
-            background: #334155;
-            padding: 20px 25px 25px 25px;
-            border-radius: 40px;
-            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.7);
-            max-width: 760px;
-            width: 100%;
+        .box {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid #facc15;
         }
-
         canvas {
+            background: #f8fafc;
             display: block;
             margin: 0 auto;
-            background: #f8fafc;
-            border-radius: 24px;
-            box-shadow: inset 0 0 0 2px #64748b, 0 10px 20px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            height: auto;
+            border-radius: 10px;
             cursor: pointer;
-            touch-action: manipulation;
+            width: 600px;
+            height: 350px;
         }
-
         .info {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 18px;
-            gap: 10px;
+            color: white;
+            font-size: 18px;
+            margin-top: 15px;
         }
-
-        .score-box {
-            background: #1e293b;
-            padding: 8px 22px;
-            border-radius: 60px;
-            box-shadow: inset 0 2px 5px #0f172a;
-            font-size: 1.5rem;
-            color: #facc15;
-            font-weight: bold;
-        }
-
-        .restart-btn {
+        button {
             background: #facc15;
             border: none;
-            padding: 8px 28px;
-            border-radius: 60px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #0f172a;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 5px 0 #b48b0a;
-        }
-
-        .restart-btn:active {
-            transform: translateY(5px);
-            box-shadow: 0 0 0 #b48b0a;
-        }
-
-        .hint {
-            color: #94a3b8;
-            font-size: 1rem;
-            margin-top: 10px;
-            text-align: center;
-        }
-
-        .hint span {
-            background: #1e293b;
-            padding: 4px 14px;
+            padding: 8px 25px;
             border-radius: 30px;
-            margin: 0 5px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
         }
-
         .footer {
-            margin-top: 18px;
-            padding-top: 14px;
-            border-top: 2px solid #475569;
-            text-align: center;
-            font-size: 1rem;
-            color: #cbd5e1;
+            color: #94a3b8;
+            margin-top: 15px;
+            font-size: 13px;
         }
-
         .footer a {
             color: #facc15;
             text-decoration: none;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
-        .footer a:hover {
-            color: #fde047;
-            text-shadow: 0 0 10px #facc15;
-        }
-
-        .footer .creator {
-            font-size: 1.05rem;
-            color: #e2e8f0;
-            letter-spacing: 0.5px;
-        }
-
-        .footer .creator span {
-            color: #facc15;
         }
     </style>
 </head>
 <body>
-
-<div class="game-wrapper">
-    <canvas id="gameCanvas" width="700" height="400"></canvas>
-
+<div class="box">
+    <canvas id="c" width="600" height="350"></canvas>
     <div class="info">
-        <div class="score-box">🏆 <span id="scoreDisplay">0</span></div>
-        <button class="restart-btn" id="restartButton">🔄 دوباره</button>
+        امتیاز: <span id="s">0</span> &nbsp;|&nbsp; 👑 رکورد: <span id="h">0</span>
     </div>
-    <div class="hint">
-        <span>👇 کلیک</span> یا <span>␣ فاصله</span> برای پریدن
-    </div>
-
+    <button onclick="reset()">🔄 دوباره</button>
     <div class="footer">
-        <div class="creator">
-            ✦ ساخته شده توسط <span>محمد حسین حبیبی راد</span> ✦
-        </div>
-        <div style="margin-top: 4px; font-size: 0.95rem;">
-            📺 <a href="https://eitaa.com/irandigital_python" target="_blank">کانال من در ایتا</a>
-        </div>
+        ✦ ساخته شده توسط <strong>محمد حسین حبیبی راد</strong> ✦<br>
+        📺 <a href="https://eitaa.com/irandigital_python" target="_blank">کانال من در ایتا</a>
     </div>
 </div>
-
 <script>
-    // ---------- گرفتن عناصر ----------
-    const canvas = document.getElementById('gameCanvas');
+    // =================== عناصر ===================
+    const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
-    const scoreSpan = document.getElementById('scoreDisplay');
+    const scoreSpan = document.getElementById('s');
+    const highSpan = document.getElementById('h');
 
-    // ---------- تنظیمات بازی ----------
-    const GRAVITY = 0.6;
-    const JUMP_FORCE = -12;
-    const GROUND_Y = 360;
-    const PLAYER_WIDTH = 30;
-    const PLAYER_HEIGHT = 40;
-    const OBSTACLE_WIDTH = 22;
-    const OBSTACLE_HEIGHT = 35;
+    // =================== تنظیمات ===================
+    const GROUND = 320;        // ارتفاع زمین
+    const GRAVITY = 0.5;
+    const JUMP = -10;
 
-    // ---------- متغیرهای بازی ----------
-    let player = {
-        x: 80,
-        y: GROUND_Y - PLAYER_HEIGHT,
-        width: PLAYER_WIDTH,
-        height: PLAYER_HEIGHT,
-        vy: 0,
-        isJumping: false
-    };
-
+    // =================== متغیرها ===================
+    let player = { x: 60, y: GROUND - 35, w: 28, h: 35, vy: 0, jump: false };
     let obstacles = [];
     let score = 0;
     let gameOver = false;
+    let speed = 4;
     let frame = 0;
-    let speed = 5;
-    let animationId = null;
-    let spawnRate = 80;
+    let highScore = 0;
 
-    // ---------- توابع کمکی ----------
-    function resetGame() {
-        player.y = GROUND_Y - PLAYER_HEIGHT;
+    // =================== رکورد ===================
+    function loadHigh() {
+        let saved = localStorage.getItem('jumpHigh');
+        if (saved) highScore = parseInt(saved);
+        highSpan.innerText = highScore;
+    }
+    function saveHigh() {
+        localStorage.setItem('jumpHigh', String(highScore));
+    }
+
+    // =================== ریست ===================
+    function reset() {
+        player.y = GROUND - 35;
         player.vy = 0;
-        player.isJumping = false;
+        player.jump = false;
         obstacles = [];
         score = 0;
         gameOver = false;
-        speed = 5;
+        speed = 4;
         frame = 0;
-        spawnRate = 80;
-        updateScore();
+        scoreSpan.innerText = '0';
     }
 
-    function updateScore() {
-        scoreSpan.textContent = score;
-    }
-
-    function isColliding(rect1, rect2) {
-        return rect1.x < rect2.x + rect2.width &&
-               rect1.x + rect1.width > rect2.x &&
-               rect1.y < rect2.y + rect2.height &&
-               rect1.y + rect1.height > rect2.y;
-    }
-
+    // =================== پرش ===================
     function jump() {
         if (gameOver) return;
-        if (player.y >= GROUND_Y - PLAYER_HEIGHT - 1) {
-            player.vy = JUMP_FORCE;
-            player.isJumping = true;
+        if (player.y >= GROUND - 35 - 1) {
+            player.vy = JUMP;
+            player.jump = true;
         }
     }
 
-    function spawnObstacle() {
-        obstacles.push({
-            x: canvas.width,
-            y: GROUND_Y - OBSTACLE_HEIGHT,
-            width: OBSTACLE_WIDTH,
-            height: OBSTACLE_HEIGHT
-        });
+    // =================== برخورد ===================
+    function collide(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x &&
+               a.y < b.y + b.h && a.y + a.h > b.y;
     }
 
+    // =================== تولید مانع ===================
+    function makeObs(x) {
+        // اندازه‌های مختلف
+        let sizes = [
+            { w: 18, h: 28 },  // کوتاه
+            { w: 22, h: 38 },  // متوسط
+            { w: 26, h: 48 }   // بلند
+        ];
+        let s = sizes[Math.floor(Math.random() * sizes.length)];
+        return { x: x, y: GROUND - s.h, w: s.w, h: s.h };
+    }
+
+    // =================== حلقه اصلی ===================
     function update() {
         if (gameOver) return;
 
+        // 1. سرعت متغیر (بدون محدودیت)
+        speed = 4 + Math.floor(score / 8);
+        if (speed > 25) speed = 25;
+
+        // 2. جاذبه
         player.vy += GRAVITY;
         player.y += player.vy;
-
-        if (player.y >= GROUND_Y - PLAYER_HEIGHT) {
-            player.y = GROUND_Y - PLAYER_HEIGHT;
+        if (player.y >= GROUND - 35) {
+            player.y = GROUND - 35;
             player.vy = 0;
-            player.isJumping = false;
+            player.jump = false;
         }
 
+        // 3. حرکت موانع
         for (let i = obstacles.length - 1; i >= 0; i--) {
-            const obs = obstacles[i];
-            obs.x -= speed;
+            let o = obstacles[i];
+            o.x -= speed;
 
-            if (obs.x + obs.width < 0) {
+            if (o.x + o.w < 0) {
                 obstacles.splice(i, 1);
                 if (!gameOver) {
                     score++;
-                    updateScore();
-                    if (score % 5 === 0 && speed < 14) {
-                        speed += 0.5;
-                        spawnRate = Math.max(35, spawnRate - 3);
-                    }
+                    scoreSpan.innerText = score;
                 }
                 continue;
             }
 
-            if (isColliding(player, obs)) {
+            if (collide(player, o)) {
                 gameOver = true;
+                if (score > highScore) {
+                    highScore = score;
+                    saveHigh();
+                    highSpan.innerText = highScore;
+                }
                 return;
             }
         }
 
+        // 4. تولید موانع (هم تکی و هم چندتایی)
         frame++;
-        if (frame >= spawnRate) {
+        let delay = Math.max(20, 60 - Math.floor(score / 2));
+        if (frame >= delay) {
             frame = 0;
-            spawnObstacle();
+            let count = (Math.random() < 0.6) ? (2 + Math.floor(Math.random() * 3)) : 1;
+            for (let i = 0; i < count; i++) {
+                let x = canvas.width + i * 45 + Math.random() * 30;
+                obstacles.push(makeObs(x));
+            }
         }
     }
 
+    // =================== رسم ===================
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // زمین
         ctx.fillStyle = '#d6d3d1';
-        ctx.fillRect(0, GROUND_Y, canvas.width, 20);
+        ctx.fillRect(0, GROUND, canvas.width, 30);
         ctx.fillStyle = '#84cc16';
-        ctx.fillRect(0, GROUND_Y - 3, canvas.width, 6);
+        ctx.fillRect(0, GROUND - 3, canvas.width, 6);
 
-        ctx.shadowColor = '#94a3b8';
-        ctx.shadowBlur = 10;
+        // بازیکن
         ctx.fillStyle = '#3b82f6';
-        ctx.beginPath();
-        ctx.roundRect(player.x, player.y, player.width, player.height, 10);
-        ctx.fill();
-
-        ctx.shadowBlur = 0;
+        ctx.fillRect(player.x, player.y, player.w, player.h);
         ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.arc(player.x + 20, player.y + 12, 7, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#1e293b';
-        ctx.beginPath();
-        ctx.arc(player.x + 23, player.y + 10, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(player.x + 20, player.y + 22, 6, 0, Math.PI);
-        ctx.strokeStyle = '#1e293b';
+        ctx.fillRect(player.x + 14, player.y + 5, 10, 10);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(player.x + 18, player.y + 8, 5, 5);
+        ctx.strokeStyle = 'black';
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(player.x + 17, player.y + 20, 7, 0, Math.PI);
         ctx.stroke();
-
-        if (player.isJumping) {
+        if (player.jump) {
             ctx.fillStyle = '#1e293b';
-            ctx.fillRect(player.x + 2, player.y + player.height, 8, 6);
-            ctx.fillRect(player.x + player.width - 10, player.y + player.height, 8, 6);
+            ctx.fillRect(player.x + 2, player.y + player.h, 8, 6);
+            ctx.fillRect(player.x + player.w - 10, player.y + player.h, 8, 6);
         }
 
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#64748b';
-        for (let obs of obstacles) {
+        // موانع
+        for (let o of obstacles) {
             ctx.fillStyle = '#22c55e';
-            ctx.beginPath();
-            ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 8);
-            ctx.fill();
-
-            ctx.fillStyle = '#16a34a';
-            for (let i = 0; i < 3; i++) {
-                ctx.fillRect(obs.x + 3, obs.y + 5 + i * 10, 6, 3);
-            }
-
+            ctx.fillRect(o.x, o.y, o.w, o.h);
             ctx.fillStyle = '#15803d';
-            ctx.fillRect(obs.x - 4, obs.y + 8, 5, 3);
-            ctx.fillRect(obs.x - 4, obs.y + 18, 5, 3);
-            ctx.fillRect(obs.x + obs.width - 1, obs.y + 8, 5, 3);
-            ctx.fillRect(obs.x + obs.width - 1, obs.y + 18, 5, 3);
+            for (let i = 0; i < o.h; i += 12) {
+                ctx.fillRect(o.x + 3, o.y + 5 + i, o.w - 6, 3);
+            }
+            // خار
+            ctx.fillStyle = '#14532d';
+            ctx.fillRect(o.x - 3, o.y + 10, 4, 3);
+            ctx.fillRect(o.x + o.w - 1, o.y + 10, 4, 3);
         }
 
+        // Game Over
         if (gameOver) {
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = 'black';
-            ctx.fillStyle = 'rgba(30, 41, 59, 0.75)';
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.shadowBlur = 0;
             ctx.fillStyle = '#facc15';
-            ctx.font = 'bold 52px Tahoma, sans-serif';
+            ctx.font = 'bold 40px Tahoma';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('💥 Game Over!', canvas.width / 2, canvas.height / 2 - 30);
-
-            ctx.fillStyle = '#e2e8f0';
-            ctx.font = '24px Tahoma, sans-serif';
-            ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText('💥 بازی تمام شد!', canvas.width / 2, canvas.height / 2 - 30);
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Tahoma';
+            ctx.fillText('امتیاز: ' + score, canvas.width / 2, canvas.height / 2 + 40);
         }
 
-        ctx.shadowBlur = 0;
+        // سرعت
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.font = '13px Tahoma';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('سرعت: ' + speed, 10, 10);
     }
 
-    function gameLoop() {
+    // =================== حلقه ===================
+    setInterval(function() {
         update();
         draw();
-        animationId = requestAnimationFrame(gameLoop);
-    }
+    }, 1000 / 60);
 
-    if (!CanvasRenderingContext2D.prototype.roundRect) {
-        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-            if (r > w / 2) r = w / 2;
-            if (r > h / 2) r = h / 2;
-            this.moveTo(x + r, y);
-            this.lineTo(x + w - r, y);
-            this.quadraticCurveTo(x + w, y, x + w, y + r);
-            this.lineTo(x + w, y + h - r);
-            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-            this.lineTo(x + r, y + h);
-            this.quadraticCurveTo(x, y + h, x, y + h - r);
-            this.lineTo(x, y + r);
-            this.quadraticCurveTo(x, y, x + r, y);
-            return this;
-        };
-    }
-
-    canvas.addEventListener('click', (e) => {
-        e.preventDefault();
-        jump();
-    });
-
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        jump();
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowUp') {
+    // =================== رویدادها ===================
+    canvas.onclick = jump;
+    canvas.ontouchstart = function(e) { e.preventDefault(); jump(); };
+    document.onkeydown = function(e) {
+        if (e.key === ' ' || e.key === 'Space') {
             e.preventDefault();
             jump();
         }
-    });
+    };
 
-    document.getElementById('restartButton').addEventListener('click', () => {
-        resetGame();
-    });
-
-    resetGame();
-    gameLoop();
+    // =================== شروع ===================
+    loadHigh();
+    reset();
 </script>
-
 </body>
 </html>
