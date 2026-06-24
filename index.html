@@ -17,7 +17,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: 'Vazir', 'Segoe UI', Tahoma, sans-serif;
+            font-family: Tahoma, 'Segoe UI', sans-serif;
             padding: 15px;
         }
 
@@ -93,7 +93,6 @@
             margin: 0 5px;
         }
 
-        /* ------- امضای پایین ------- */
         .footer {
             margin-top: 18px;
             padding-top: 14px;
@@ -101,7 +100,6 @@
             text-align: center;
             font-size: 1rem;
             color: #cbd5e1;
-            direction: ltr;
         }
 
         .footer a {
@@ -133,20 +131,19 @@
     <canvas id="gameCanvas" width="700" height="400"></canvas>
 
     <div class="info">
-        <div class="score-box">🏆 <span id="scoreDisplay">۰</span></div>
+        <div class="score-box">🏆 <span id="scoreDisplay">0</span></div>
         <button class="restart-btn" id="restartButton">🔄 دوباره</button>
     </div>
     <div class="hint">
         <span>👇 کلیک</span> یا <span>␣ فاصله</span> برای پریدن
     </div>
 
-    <!-- ====== امضای شما ====== -->
     <div class="footer">
         <div class="creator">
             ✦ ساخته شده توسط <span>محمد حسین حبیبی راد</span> ✦
         </div>
         <div style="margin-top: 4px; font-size: 0.95rem;">
-            📺 <a href="https://t.me/your_channel_link" target="_blank">کانال من در تلگرام</a>
+            📺 <a href="https://eitaa.com/irandigital_python" target="_blank">کانال من در ایتا</a>
         </div>
     </div>
 </div>
@@ -226,7 +223,6 @@
         });
     }
 
-    // ---------- حلقه اصلی بازی ----------
     function update() {
         if (gameOver) return;
 
@@ -269,17 +265,14 @@
         }
     }
 
-    // ---------- رسم ----------
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // زمین
         ctx.fillStyle = '#d6d3d1';
         ctx.fillRect(0, GROUND_Y, canvas.width, 20);
         ctx.fillStyle = '#84cc16';
         ctx.fillRect(0, GROUND_Y - 3, canvas.width, 6);
 
-        // بازیکن
         ctx.shadowColor = '#94a3b8';
         ctx.shadowBlur = 10;
         ctx.fillStyle = '#3b82f6';
@@ -309,7 +302,6 @@
             ctx.fillRect(player.x + player.width - 10, player.y + player.height, 8, 6);
         }
 
-        // موانع
         ctx.shadowBlur = 8;
         ctx.shadowColor = '#64748b';
         for (let obs of obstacles) {
@@ -338,14 +330,14 @@
 
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#facc15';
-            ctx.font = 'bold 52px Vazir, Tahoma, sans-serif';
+            ctx.font = 'bold 52px Tahoma, sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('💥 بازی تمام شد!', canvas.width / 2, canvas.height / 2 - 30);
+            ctx.fillText('💥 Game Over!', canvas.width / 2, canvas.height / 2 - 30);
 
             ctx.fillStyle = '#e2e8f0';
-            ctx.font = '24px Vazir, Tahoma, sans-serif';
-            ctx.fillText('امتیاز: ' + score, canvas.width / 2, canvas.height / 2 + 40);
+            ctx.font = '24px Tahoma, sans-serif';
+            ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 40);
         }
 
         ctx.shadowBlur = 0;
@@ -357,7 +349,6 @@
         animationId = requestAnimationFrame(gameLoop);
     }
 
-    // ---------- roundRect ----------
     if (!CanvasRenderingContext2D.prototype.roundRect) {
         CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
             if (r > w / 2) r = w / 2;
@@ -375,7 +366,6 @@
         };
     }
 
-    // ---------- رویدادها ----------
     canvas.addEventListener('click', (e) => {
         e.preventDefault();
         jump();
@@ -397,7 +387,6 @@
         resetGame();
     });
 
-    // ---------- شروع ----------
     resetGame();
     gameLoop();
 </script>
