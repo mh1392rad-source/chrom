@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی پرش از موانع</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Vazir', 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        .game-wrapper {
+            background: #334155;
+            padding: 20px 30px 30px 30px;
+            border-radius: 40px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.7);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #f8fafc;
+            border-radius: 24px;
+            box-shadow: inset 0 0 0 2px #64748b, 0 10px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 18px;
+            color: #e2e8f0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0 10px;
+        }
+
+        .score-box {
+            background: #1e293b;
+            padding: 8px 22px;
+            border-radius: 60px;
+            box-shadow: inset 0 2px 5px #0f172a;
+            font-size: 1.5rem;
+            color: #facc15;
+        }
+
+        .restart-btn {
+            background: #facc15;
+            border: none;
+            padding: 8px 28px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #0f172a;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #b48b0a;
+        }
+
+        .restart-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 #b48b0a;
+        }
+
+        .hint {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .hint span {
+            background: #1e293b;
+            padding: 4px 14px;
+            border-radius: 30px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+    <canvas id="gameCanvas" width="700" height="400"></canvas>
+
+    <div class="info">
+        <div class="score-box">🏆 <span id="scoreDisplay">۰</span></div>
+        <button class="restart-btn" id="restartButton">🔄 دوباره</button>
+    </div>
+    <div class="hint">
+        <span>👇 کلیک</span> یا <span>␣ فاصله</span> برای پریدن
+    </div>
+</div>
+
+<script>
+    // ---------- گرفتن عناصر ----------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreSpan = document.getElementById('scoreDisplay');
+
+    // ---------- تنظیمات بازی ----------
+    const GRAVITY = 0.6;
+    const JUMP_FORCE = -12;
+    const GROUND_Y = 360;        // ارتفاع زمین از بالای کانواس
+    const PLAYER_WIDTH = 30;
+    const PLAYER_HEIGHT = 40;
+    const OBSTACLE_WIDTH = 22;
+    const OBSTACLE_HEIGHT = 35;
+
+    // ---------- متغیرهای بازی ----------
+    let player = {
+        x: 80,
+        y: GROUND_Y - PLAYER_HEIGHT,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT,
+        vy: 0,
+        isJumping: false
+    };
+
+    let obstacles = [];
+    let score = 0;
+    let gameOver = false;
+    let frame = 0;
+    let speed = 5;
+    let animationId = null;
+    let spawnRate = 80; // تعداد فریم بین هر مانع
+
+    // ---------- توابع کمکی ----------
+    function resetGame() {
+        player.y = GROUND_Y - PLAYER_HEIGHT;
+        player.vy = 0;
+        player.isJumping = false;
+        obstacles = [];
+        score = 0;
+        gameOver = false;
+        speed = 5;
+        frame = 0;
+        spawnRate = 80;
+        updateScore();
+    }
+
+    function updateScore() {
+        scoreSpan.textContent = score;
+    }
+
+    // ---------- برخورد (مستطیل با مستطیل) ----------
+    function isColliding(rect1, rect2) {
+        return rect1.x < rect2.x + rect2.width &&
+               rect1.x + rect1.width > rect2.x &&
+               rect1.y < rect2.y + rect2.height &&
+               rect1.y + rect1.height > rect2.y;
+    }
+
+    // ---------- جامپ ----------
+    function jump() {
+        if (gameOver) return;
+        // فقط وقتی روی زمین هستیم بپریم
+        if (player.y >= GROUND_Y - PLAYER_HEIGHT - 1) {
+            player.vy = JUMP_FORCE;
+            player.isJumping = true;
+        }
+    }
+
+    // ---------- تولید مانع جدید ----------
+    function spawnObstacle() {
+        obstacles.push({
+            x: canvas.width,
+            y: GROUND_Y - OBSTACLE_HEIGHT,
+            width: OBSTACLE_WIDTH,
+            height: OBSTACLE_HEIGHT
+        });
+    }
+
+    // ---------- حلقه اصلی بازی ----------
+    function update() {
+        if (gameOver) return;
+
+        // ۱. جاذبه و حرکت عمودی بازیکن
+        player.vy += GRAVITY;
+        player.y += player.vy;
+
+        // جلوگیری از رفتن به زیر زمین
+        if (player.y >= GROUND_Y - PLAYER_HEIGHT) {
+            player.y = GROUND_Y - PLAYER_HEIGHT;
+            player.vy = 0;
+            player.isJumping = false;
+        }
+
+        // ۲. حرکت موانع به چپ
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const obs = obstacles[i];
+            obs.x -= speed;
+
+            // حذف موانعی که از صفحه خارج شدن
+            if (obs.x + obs.width < 0) {
+                obstacles.splice(i, 1);
+                // افزایش امتیاز برای هر مانع رد شده
+                if (!gameOver) {
+                    score++;
+                    updateScore();
+
+                    // افزایش تدریجی سرعت و سختی
+                    if (score % 5 === 0 && speed < 14) {
+                        speed += 0.5;
+                        spawnRate = Math.max(35, spawnRate - 3);
+                    }
+                }
+                continue;
+            }
+
+            // برخورد بازیکن با مانع
+            if (isColliding(player, obs)) {
+                gameOver = true;
+                return;
+            }
+        }
+
+        // ۳. تولید مانع جدید بر اساس نرخ
+        frame++;
+        if (frame >= spawnRate) {
+            frame = 0;
+            spawnObstacle();
+        }
+    }
+
+    // ---------- رسم (رندرینگ) ----------
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // ---- زمین ----
+        ctx.fillStyle = '#d6d3d1';
+        ctx.fillRect(0, GROUND_Y, canvas.width, 20);
+        // خط چمن
+        ctx.fillStyle = '#84cc16';
+        ctx.fillRect(0, GROUND_Y - 3, canvas.width, 6);
+
+        // ---- بازیکن (یک شخصیت بامزه) ----
+        // بدن
+        ctx.shadowColor = '#94a3b8';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.roundRect(player.x, player.y, player.width, player.height, 10);
+        ctx.fill();
+
+        // چشم
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(player.x + 20, player.y + 12, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(player.x + 23, player.y + 10, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // دهن خندان
+        ctx.beginPath();
+        ctx.arc(player.x + 20, player.y + 22, 6, 0, Math.PI);
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // پاها (وقتی در هواست)
+        if (player.isJumping) {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(player.x + 2, player.y + player.height, 8, 6);
+            ctx.fillRect(player.x + player.width - 10, player.y + player.height, 8, 6);
+        }
+
+        // ---- موانع (کاکتوس‌های کارتونی) ----
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#64748b';
+        for (let obs of obstacles) {
+            // بدنه کاکتوس
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.roundRect(obs.x, obs.y, obs.width, obs.height, 8);
+            ctx.fill();
+
+            // خط راه‌راه روی کاکتوس
+            ctx.fillStyle = '#16a34a';
+            for (let i = 0; i < 3; i++) {
+                ctx.fillRect(obs.x + 3, obs.y + 5 + i * 10, 6, 3);
+            }
+
+            // خارهای کوچک
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(obs.x - 4, obs.y + 8, 5, 3);
+            ctx.fillRect(obs.x - 4, obs.y + 18, 5, 3);
+            ctx.fillRect(obs.x + obs.width - 1, obs.y + 8, 5, 3);
+            ctx.fillRect(obs.x + obs.width - 1, obs.y + 18, 5, 3);
+        }
+
+        // ---- پیام Game Over ----
+        if (gameOver) {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = 'black';
+            ctx.fillStyle = 'rgba(30, 41, 59, 0.75)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#facc15';
+            ctx.font = 'bold 52px Vazir, Tahoma, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💥 بازی تمام شد!', canvas.width / 2, canvas.height / 2 - 30);
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '24px Vazir, Tahoma, sans-serif';
+            ctx.fillText('امتیاز: ' + score, canvas.width / 2, canvas.height / 2 + 40);
+        }
+
+        // reset سایه
+        ctx.shadowBlur = 0;
+    }
+
+    // ---------- راند بازی ----------
+    function gameLoop() {
+        update();
+        draw();
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // ---------- اضافه کردن متد roundRect به Canvas ----------
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (r > w / 2) r = w / 2;
+            if (r > h / 2) r = h / 2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            return this;
+        };
+    }
+
+    // ---------- رویدادها ----------
+    // کلیک روی صفحه
+    canvas.addEventListener('click', (e) => {
+        e.preventDefault();
+        jump();
+    });
+
+    // ضربه لمسی (موبایل)
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        jump();
+    });
+
+    // کلید فاصله (Space) و فلش بالا
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            jump();
+        }
+    });
+
+    // دکمه ری‌استارت
+    document.getElementById('restartButton').addEventListener('click', () => {
+        resetGame();
+    });
+
+    // شروع بازی
+    resetGame();
+    gameLoop();
+
+    // وقتی صفحه ریسایز میشه، canvas رو متناسب نگه دار (اختیاری)
+    function handleResize() {
+        // اینجا نیازی نیست چون canvas ثابت ۷۰۰*۴۰۰ هست
+    }
+    window.addEventListener('resize', handleResize);
+</script>
+
+</body>
+</html>
